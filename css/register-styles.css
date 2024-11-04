@@ -1,0 +1,25 @@
+/* css/styles.css */
+
+body {
+    background-image: url('../assets/images/background5.jpg'); /* Adjust as needed */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: Arial, sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Example specific styling for the 'Go to Profile' button in explore.html */
+.profile-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
