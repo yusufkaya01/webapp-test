@@ -69,9 +69,17 @@ app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'profile.html'));
 });
 
+// Serve the additional info page
+app.get('/additional-info.html', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send('You must log in first.');
+    }
+    res.sendFile(path.join(__dirname, 'additional-info.html'));
+});
+
 // Registration route
 app.post('/auth/register', (req, res) => {
-    const { username, email, password, name, surname, birthdate, gender, interestedGender } = req.body;
+    const { username, email, password, name, surname, birthdate, gender } = req.body;
 
     // Check if the user already exists
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
@@ -83,13 +91,13 @@ app.post('/auth/register', (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert the new user
-        db.query('INSERT INTO users (username, email, password, name, surname, birthdate, gender, interested_gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-        [username, email, hashedPassword, name, surname, birthdate, gender, interestedGender], (err, result) => {
+        db.query('INSERT INTO users (username, email, password, name, surname, birthdate, gender) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+        [username, email, hashedPassword, name, surname, birthdate, gender], (err, result) => {
             if (err) {
                 return res.status(500).send('Error registering user.');
             }
             req.session.userId = result.insertId; // Store user ID in session
-            res.redirect('/profile'); // Redirect to profile page
+            res.redirect('/additional-info.html'); // Redirect to additional info page
         });
     });
 });
@@ -114,6 +122,24 @@ app.post('/auth/login', (req, res) => {
 
         // Set session
         req.session.userId = user.id;
+        res.redirect('/profile'); // Redirect to profile page
+    });
+});
+
+// Handle additional user info submission
+app.post('/auth/additional-info', (req, res) => {
+    const { profile_description, interested_gender, pet, hobbies } = req.body;
+    const userId = req.session.userId;
+
+    // Convert hobbies array to string
+    const hobbiesString = Array.isArray(hobbies) ? hobbies.join(',') : hobbies;
+
+    // Update user profile
+    db.query('INSERT INTO user_profile (id, profile_description, interested_gender, pet, hobbies) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE profile_description = ?, interested_gender = ?, pet = ?, hobbies = ?', 
+    [userId, profile_description, interested_gender, pet, hobbiesString, profile_description, interested_gender, pet, hobbiesString], (err) => {
+        if (err) {
+            return res.status(500).send('Error updating profile.');
+        }
         res.redirect('/profile'); // Redirect to profile page
     });
 });
