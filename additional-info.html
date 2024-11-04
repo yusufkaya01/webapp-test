@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Additional Info</title>
+</head>
+<body>
+    <h1>Additional Information</h1>
+    <form action="/auth/additional-info" method="POST">
+        <textarea name="profile_description" placeholder="Profile Description"></textarea><br>
+        
+        <label for="interested_gender">Which gender are you interested in?</label>
+        <select name="interested_gender" id="interested_gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select><br>
+
+        <label for="pet">Do you have a pet?</label>
+        <select name="pet" id="pet">
+            <option value="none">No</option>
+            <option value="cat">Cat</option>
+            <option value="dog">Dog</option>
+            <option value="other">Other</option>
+        </select><br>
+
+        <label for="hobbies">Select your hobbies:</label><br>
+        <input type="checkbox" name="hobbies" value="reading"> 📚 Reading<br>
+        <input type="checkbox" name="hobbies" value="running"> 🏃 Running<br>
+        <input type="checkbox" name="hobbies" value="snowboarding"> 🏂 Snowboarding<br>
+        <input type="checkbox" name="hobbies" value="driving"> 🚗 Driving<br>
+        <input type="checkbox" name="hobbies" value="other"> ❓ Other<br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

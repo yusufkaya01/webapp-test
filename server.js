@@ -71,7 +71,7 @@ app.get('/profile', (req, res) => {
 
 // Registration route
 app.post('/auth/register', (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, name, surname, birthdate, gender, interestedGender } = req.body;
 
     // Check if the user already exists
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
@@ -83,7 +83,8 @@ app.post('/auth/register', (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert the new user
-        db.query('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', [username, email, hashedPassword], (err, result) => {
+        db.query('INSERT INTO users (username, email, password, name, surname, birthdate, gender, interested_gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+        [username, email, hashedPassword, name, surname, birthdate, gender, interestedGender], (err, result) => {
             if (err) {
                 return res.status(500).send('Error registering user.');
             }

@@ -8,8 +8,23 @@
 <body>
     <h1>Register</h1>
     <form action="/auth/register" method="POST">
-        <input type="text" name="username" placeholder="Username" required />
+        <input type="text" name="name" placeholder="Name" required />
+        <input type="text" name="surname" placeholder="Surname" required />
+        <input type="date" name="birthdate" required />
         <input type="email" name="email" placeholder="Email" required />
+        <input type="text" name="username" placeholder="Username" required />
+        <select name="gender" required>
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+        </select>
+        <select name="interestedGender" required>
+            <option value="">Interested In</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="both">Both</option>
+        </select>
         <input type="password" name="password" placeholder="Password" required />
         <button type="submit">Register</button>
     </form>
