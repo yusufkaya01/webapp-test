@@ -9,20 +9,83 @@
     <h1>Welcome, <span id="username"></span>!</h1>
     <p>This is your profile page.</p>
 
+    <h2>Your Profile Information</h2>
+    <div id="profile-info">
+        <p><strong>Profile Description:</strong> <span id="profile-description"></span></p>
+        <p><strong>Interested Gender:</strong> <span id="interested-gender"></span></p>
+        <p><strong>Pet:</strong> <span id="pet"></span></p>
+        <p><strong>Hobbies:</strong> <span id="hobbies"></span></p>
+    </div>
+
+    <button id="edit-profile-button">Edit Profile</button>
+
+    <div id="edit-profile" style="display: none;">
+        <h2>Edit Profile</h2>
+        <form id="edit-form">
+            <label for="profile-description-input">Profile Description:</label>
+            <input type="text" id="profile-description-input" required>
+            <br>
+            <label for="interested-gender-input">Interested Gender:</label>
+            <input type="text" id="interested-gender-input" required>
+            <br>
+            <label for="pet-input">Pet:</label>
+            <input type="text" id="pet-input" required>
+            <br>
+            <label for="hobbies-input">Hobbies (comma-separated):</label>
+            <input type="text" id="hobbies-input" required>
+            <br>
+            <button type="submit">Update Profile</button>
+        </form>
+    </div>
+
     <script>
-        // Fetch username from the server and display it
-        fetch('/api/user')
-            .then(response => {
-                if (!response.ok) throw new Error('You must log in first.');
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('username').innerText = data.username;
-            })
-            .catch(error => {
-                console.error('Error fetching username:', error);
-                alert(error.message); // Alert the user if there's an error
+        // Fetch user profile information
+        async function fetchUserProfile() {
+            const response = await fetch('/api/user');
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('username').innerText = user.username;
+                document.getElementById('profile-description').innerText = user.profile_description || 'No description';
+                document.getElementById('interested-gender').innerText = user.interested_gender || 'Not specified';
+                document.getElementById('pet').innerText = user.pet || 'No pet';
+                document.getElementById('hobbies').innerText = user.hobbies || 'No hobbies';
+            } else {
+                console.error('Failed to fetch user profile:', response.statusText);
+            }
+        }
+
+        // Update profile form submission
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const profile_description = document.getElementById('profile-description-input').value;
+            const interested_gender = document.getElementById('interested-gender-input').value;
+            const pet = document.getElementById('pet-input').value;
+            const hobbies = document.getElementById('hobbies-input').value.split(',');
+
+            const response = await fetch('/api/user/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ profile_description, interested_gender, pet, hobbies })
             });
+
+            if (response.ok) {
+                alert('Profile updated successfully!');
+                fetchUserProfile(); // Refresh the profile information
+                document.getElementById('edit-profile').style.display = 'none'; // Hide edit form
+            } else {
+                alert('Error updating profile.');
+            }
+        });
+
+        // Show edit profile form
+        document.getElementById('edit-profile-button').addEventListener('click', () => {
+            document.getElementById('edit-profile').style.display = 'block';
+        });
+
+        // Initial profile fetch
+        fetchUserProfile();
     </script>
 </body>
 </html>

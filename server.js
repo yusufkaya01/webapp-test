@@ -134,31 +134,60 @@ app.post('/auth/additional-info', (req, res) => {
     // Convert hobbies array to string
     const hobbiesString = Array.isArray(hobbies) ? hobbies.join(',') : hobbies;
 
-    // Update user profile
-    db.query('INSERT INTO user_profile (id, profile_description, interested_gender, pet, hobbies) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE profile_description = ?, interested_gender = ?, pet = ?, hobbies = ?', 
-    [userId, profile_description, interested_gender, pet, hobbiesString, profile_description, interested_gender, pet, hobbiesString], (err) => {
-        if (err) {
-            return res.status(500).send('Error updating profile.');
-        }
-        res.redirect('/profile'); // Redirect to profile page
-    });
+    db.query('INSERT INTO user_profile (id, profile_description, interested_gender, pet, hobbies) VALUES (?, ?, ?, ?, ?)',
+        [userId, profile_description, interested_gender, pet, hobbiesString], (err, result) => {
+            if (err) {
+                return res.status(500).send('Error saving additional info.');
+            }
+            res.redirect('/profile'); // Redirect to profile page
+        });
 });
 
-// Get user info
+// Fetch user profile information
 app.get('/api/user', (req, res) => {
-    if (!req.session.userId) {
+    const userId = req.session.userId;
+    if (!userId) {
         return res.status(401).send('You must log in first.');
     }
 
-    db.query('SELECT username FROM users WHERE id = ?', [req.session.userId], (err, results) => {
-        if (err || results.length === 0) {
-            return res.status(500).send('Error fetching user information.');
+    // Fetch user info and profile
+    db.query('SELECT u.username, up.profile_description, up.interested_gender, up.pet, up.hobbies FROM users u LEFT JOIN user_profile up ON u.id = up.id WHERE u.id = ?',
+        [userId], (err, results) => {
+            if (err) {
+                return res.status(500).send('Error fetching user information.');
+            }
+            res.json(results[0]); // Send back user profile
+        });
+});
+
+// Update user profile information
+app.post('/api/user/update', (req, res) => {
+    const { profile_description, interested_gender, pet, hobbies } = req.body;
+    const userId = req.session.userId; // Get the user ID from session
+
+    // Convert hobbies array to string
+    const hobbiesString = Array.isArray(hobbies) ? hobbies.join(',') : hobbies;
+
+    db.query('UPDATE user_profile SET profile_description = ?, interested_gender = ?, pet = ?, hobbies = ? WHERE id = ?',
+        [profile_description, interested_gender, pet, hobbiesString, userId], (err, result) => {
+            if (err) {
+                return res.status(500).send('Error updating profile.');
+            }
+            res.send('Profile updated successfully!');
+        });
+});
+
+// Logout route
+app.post('/auth/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).send('Error logging out.');
         }
-        res.json({ username: results[0].username });
+        res.redirect('/'); // Redirect to homepage
     });
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
