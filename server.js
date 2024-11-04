@@ -4,29 +4,24 @@ const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
+const ejs = require('ejs');
 
 const app = express();
 const PORT = 3000;
 
-// Add this line at the top with other requires
-const ejs = require('ejs');
-
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // Ensure your views are in a 'views' directory
-
+app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'secret-key', // Replace with a secure key in production
+    secret: 'secret-key',
     resave: false,
     saveUninitialized: true,
 }));
-
-// Serve static files (like HTML)
-app.use(express.static(path.join(__dirname))); // Serve files from the root directory
+app.use(express.static(path.join(__dirname)));
 
 // MySQL connection setup
 const db = mysql.createConnection({
@@ -46,7 +41,7 @@ db.connect(err => {
 
 // Basic route to serve the welcome page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html')); // Serve the welcome page
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Test MySQL connection route
@@ -81,23 +76,20 @@ app.get('/additional-info.html', (req, res) => {
 app.post('/auth/register', (req, res) => {
     const { username, email, password, name, surname, birthdate, gender } = req.body;
 
-    // Check if the user already exists
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], async (err, results) => {
         if (results.length > 0) {
             return res.status(400).send('User already exists.');
         }
 
-        // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert the new user
         db.query('INSERT INTO users (username, email, password, name, surname, birthdate, gender) VALUES (?, ?, ?, ?, ?, ?, ?)', 
         [username, email, hashedPassword, name, surname, birthdate, gender], (err, result) => {
             if (err) {
                 return res.status(500).send('Error registering user.');
             }
-            req.session.userId = result.insertId; // Store user ID in session
-            res.redirect('/additional-info.html'); // Redirect to additional info page
+            req.session.userId = result.insertId;
+            res.redirect('/additional-info.html');
         });
     });
 });
@@ -106,32 +98,34 @@ app.post('/auth/register', (req, res) => {
 app.post('/auth/login', (req, res) => {
     const { username, password } = req.body;
 
-    // Find user by username
     db.query('SELECT * FROM users WHERE username = ?', [username], async (err, results) => {
         if (results.length === 0) {
             return res.status(400).send('User not found.');
         }
 
         const user = results[0];
-
-        // Compare the hashed password
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(401).send('Incorrect password.');
         }
 
-        // Set session
         req.session.userId = user.id;
-        req.session.username = user.username; // Store username in session
-        res.redirect(`/profile.html`); // Redirect to profile page
+        req.session.username = user.username;
+        res.redirect('/profile');
     });
 });
 
-// Serve profile page with dynamic URL based on username
-app.get('/:username', (req, res) => {
+// Serve profile.html when accessing /profile
+app.get('/profile', (req, res) => {
+    res.sendFile(path.join(__dirname, 'profile.html'));
+});
+
+// Serve dynamic profile page based on username
+app.get('/user/:username', (req, res) => {
     const { username } = req.params;
 
-    db.query('SELECT u.id, u.username, up.profile_description, up.interested_gender, up.pet, up.hobbies FROM users u LEFT JOIN user_profile up ON u.id = up.id WHERE u.username = ?', [username], (err, results) => {
+    db.query('SELECT u.id, u.username, u.name, u.surname, u.email, u.birthdate, u.gender, up.profile_description, up.interested_gender, up.pet, up.hobbies FROM users u LEFT JOIN user_profile up ON u.id = up.id WHERE u.username = ?', [username], (err, results) => {
         if (err) {
             return res.status(500).send('Error fetching user information.');
         }
@@ -140,7 +134,7 @@ app.get('/:username', (req, res) => {
         }
 
         const userData = results[0];
-        res.render('profile', { user: userData }); // Render profile page dynamically
+        res.render('profile', { user: userData });
     });
 });
 
@@ -149,7 +143,6 @@ app.post('/auth/additional-info', (req, res) => {
     const { profile_description, interested_gender, pet, hobbies } = req.body;
     const userId = req.session.userId;
 
-    // Convert hobbies array to string
     const hobbiesString = Array.isArray(hobbies) ? hobbies.join(',') : hobbies;
 
     db.query('INSERT INTO user_profile (id, profile_description, interested_gender, pet, hobbies) VALUES (?, ?, ?, ?, ?)',
@@ -157,7 +150,7 @@ app.post('/auth/additional-info', (req, res) => {
             if (err) {
                 return res.status(500).send('Error saving additional info.');
             }
-            res.redirect(`/profile`); // Redirect to profile page
+            res.redirect('/profile');
         });
 });
 
@@ -168,66 +161,29 @@ app.get('/api/user', (req, res) => {
         return res.status(401).send('You must log in first.');
     }
 
-    // Fetch user info and profile
     db.query('SELECT u.username, up.profile_description, up.interested_gender, up.pet, up.hobbies FROM users u LEFT JOIN user_profile up ON u.id = up.id WHERE u.id = ?',
         [userId], (err, results) => {
             if (err) {
                 return res.status(500).send('Error fetching user information.');
             }
-            res.json(results[0]); // Send back user profile
+            res.json(results[0]);
         });
 });
 
 // Update user profile information
 app.post('/api/user/update', (req, res) => {
     const { profile_description, interested_gender, pet, hobbies } = req.body;
-    const userId = req.session.userId; // Get the user ID from session
+    const userId = req.session.userId;
 
-    // Convert hobbies array to string
     const hobbiesString = Array.isArray(hobbies) ? hobbies.join(',') : hobbies;
 
     db.query('UPDATE user_profile SET profile_description = ?, interested_gender = ?, pet = ?, hobbies = ? WHERE id = ?',
         [profile_description, interested_gender, pet, hobbiesString, userId], (err, result) => {
             if (err) {
-                return res.status(500).send('Error updating profile.');
+                return res.status(500).send('Error updating profile information.');
             }
-            res.send('Profile updated successfully!');
+            res.redirect('/profile.html');
         });
-});
-
-// Explore users based on filters
-app.get('/api/users', (req, res) => {
-    const { minAge, maxAge, gender } = req.query;
-    let query = 'SELECT * FROM users';
-    const params = [];
-
-    const today = new Date();
-    const ageCutOff = (age) => {
-        const birthDate = new Date();
-        birthDate.setFullYear(today.getFullYear() - age);
-        return birthDate.toISOString().split('T')[0];
-    };
-
-    if (minAge) {
-        query += ' WHERE birthdate <= ?';
-        params.push(ageCutOff(minAge));
-    }
-    if (maxAge) {
-        query += (params.length > 0 ? ' AND' : ' WHERE') + ' birthdate >= ?';
-        params.push(ageCutOff(maxAge));
-    }
-    if (gender) {
-        query += (params.length > 0 ? ' AND' : ' WHERE') + ' gender = ?';
-        params.push(gender);
-    }
-
-    db.query(query, params, (error, results) => {
-        if (error) {
-            console.error('Error fetching users:', error);
-            return res.status(500).send('Server error');
-        }
-        res.json(results);
-    });
 });
 
 // Logout route
@@ -235,12 +191,12 @@ app.post('/auth/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
             return res.status(500).send('Error logging out.');
-    }
-    res.redirect('/'); // Redirect to homepage
+        }
+        res.redirect('/login.html');
     });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

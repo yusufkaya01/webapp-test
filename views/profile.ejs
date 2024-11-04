@@ -3,26 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
-    <link rel="stylesheet" href="../css/profile-styles.css"> <!-- Add your CSS file -->
+    <title><%= user.username %>'s Profile</title>
+    <link rel="stylesheet" href="/css/profile-styles.css">
 </head>
 <body>
-    <h1>User Profile</h1>
-    <% if (user) { %>
+    <header>
+        <h1>
+            This is <%= user.name.charAt(0).toUpperCase() + user.name.slice(1).toLowerCase() %> 
+            <%= user.surname.charAt(0).toUpperCase() + user.surname.slice(1).toLowerCase() %>
+        </h1>
+    </header>
+    <section>
+        <h2>Profile Information</h2>
         <p><strong>Username:</strong> <%= user.username %></p>
-        <p><strong>Name:</strong> <%= user.name %> <%= user.surname %></p>
         <p><strong>Email:</strong> <%= user.email %></p>
         <p><strong>Birthdate:</strong> <%= user.birthdate %></p>
         <p><strong>Gender:</strong> <%= user.gender %></p>
+        <h3>Additional Information</h3>
         <p><strong>Profile Description:</strong> <%= user.profile_description || 'Not provided' %></p>
         <p><strong>Interested Gender:</strong> <%= user.interested_gender || 'Not specified' %></p>
         <p><strong>Pet:</strong> <%= user.pet || 'Not specified' %></p>
         <p><strong>Hobbies:</strong> <%= user.hobbies || 'Not specified' %></p>
-    <% } else { %>
-        <p>No user information available. Please log in.</p>
-    <% } %>
-    <form action="/auth/logout" method="POST">
-        <button type="submit">Logout</button>
-    </form>
+    </section>
+    <footer>
+        <form action="/auth/logout" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </footer>
 </body>
 </html>
