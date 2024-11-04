@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="../css/profile-styles.css"> <!-- Add your CSS file -->
+</head>
+<body>
+    <h1>User Profile</h1>
+    <% if (user) { %>
+        <p><strong>Username:</strong> <%= user.username %></p>
+        <p><strong>Name:</strong> <%= user.name %> <%= user.surname %></p>
+        <p><strong>Email:</strong> <%= user.email %></p>
+        <p><strong>Birthdate:</strong> <%= user.birthdate %></p>
+        <p><strong>Gender:</strong> <%= user.gender %></p>
+        <p><strong>Profile Description:</strong> <%= user.profile_description || 'Not provided' %></p>
+        <p><strong>Interested Gender:</strong> <%= user.interested_gender || 'Not specified' %></p>
+        <p><strong>Pet:</strong> <%= user.pet || 'Not specified' %></p>
+        <p><strong>Hobbies:</strong> <%= user.hobbies || 'Not specified' %></p>
+    <% } else { %>
+        <p>No user information available. Please log in.</p>
+    <% } %>
+    <form action="/auth/logout" method="POST">
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>

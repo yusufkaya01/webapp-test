@@ -8,6 +8,14 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
+// Add this line at the top with other requires
+const ejs = require('ejs');
+
+// Set EJS as the view engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); // Ensure your views are in a 'views' directory
+
+
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -61,28 +69,12 @@ app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Serve the profile page
-app.get('/profile', (req, res) => {
-    if (!req.session.userId) {
-        return res.status(401).send('You must log in first.');
-    }
-    res.sendFile(path.join(__dirname, 'profile.html'));
-});
-
 // Serve the additional info page
 app.get('/additional-info.html', (req, res) => {
     if (!req.session.userId) {
         return res.status(401).send('You must log in first.');
     }
     res.sendFile(path.join(__dirname, 'additional-info.html'));
-});
-
-// Serve the explore page
-app.get('/explore.html', (req, res) => {
-    if (!req.session.userId) {
-        return res.status(401).send('You must log in first.');
-    }
-    res.sendFile(path.join(__dirname, 'explore.html'));
 });
 
 // Registration route
@@ -130,7 +122,25 @@ app.post('/auth/login', (req, res) => {
 
         // Set session
         req.session.userId = user.id;
-        res.redirect('/profile'); // Redirect to profile page
+        req.session.username = user.username; // Store username in session
+        res.redirect(`/profile.html`); // Redirect to profile page
+    });
+});
+
+// Serve profile page with dynamic URL based on username
+app.get('/:username', (req, res) => {
+    const { username } = req.params;
+
+    db.query('SELECT u.id, u.username, up.profile_description, up.interested_gender, up.pet, up.hobbies FROM users u LEFT JOIN user_profile up ON u.id = up.id WHERE u.username = ?', [username], (err, results) => {
+        if (err) {
+            return res.status(500).send('Error fetching user information.');
+        }
+        if (results.length === 0) {
+            return res.status(404).send('User not found.');
+        }
+
+        const userData = results[0];
+        res.render('profile', { user: userData }); // Render profile page dynamically
     });
 });
 
@@ -147,7 +157,7 @@ app.post('/auth/additional-info', (req, res) => {
             if (err) {
                 return res.status(500).send('Error saving additional info.');
             }
-            res.redirect('/profile'); // Redirect to profile page
+            res.redirect(`/profile`); // Redirect to profile page
         });
 });
 
@@ -225,8 +235,8 @@ app.post('/auth/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
             return res.status(500).send('Error logging out.');
-        }
-        res.redirect('/'); // Redirect to homepage
+    }
+    res.redirect('/'); // Redirect to homepage
     });
 });
 
