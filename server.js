@@ -3,6 +3,7 @@ const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -11,10 +12,13 @@ const PORT = 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'secret-key', // replace with a secure key in production
+    secret: 'secret-key', // Replace with a secure key in production
     resave: false,
     saveUninitialized: true,
 }));
+
+// Serve static files (like HTML)
+app.use(express.static(path.join(__dirname))); // Serve files from the root directory
 
 // MySQL connection setup
 const db = mysql.createConnection({
@@ -32,9 +36,9 @@ db.connect(err => {
     }
 });
 
-// Basic route
+// Basic route to serve the welcome page
 app.get('/', (req, res) => {
-    res.send('Hello, World!');
+    res.sendFile(path.join(__dirname, 'index.html')); // Serve the welcome page
 });
 
 // Test MySQL connection route
@@ -45,6 +49,24 @@ app.get('/db-test', (req, res) => {
         }
         res.send(`Database connected! The solution to 1 + 1 is: ${results[0].solution}`);
     });
+});
+
+// Serve the registration page
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'register.html'));
+});
+
+// Serve the login page
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Serve the profile page
+app.get('/profile', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send('You must log in first.');
+    }
+    res.sendFile(path.join(__dirname, 'profile.html'));
 });
 
 // Registration route
@@ -65,7 +87,8 @@ app.post('/auth/register', (req, res) => {
             if (err) {
                 return res.status(500).send('Error registering user.');
             }
-            res.status(201).send('User registered successfully!');
+            req.session.userId = result.insertId; // Store user ID in session
+            res.redirect('/profile'); // Redirect to profile page
         });
     });
 });
@@ -90,7 +113,21 @@ app.post('/auth/login', (req, res) => {
 
         // Set session
         req.session.userId = user.id;
-        res.send('User logged in successfully!');
+        res.redirect('/profile'); // Redirect to profile page
+    });
+});
+
+// Get user info
+app.get('/api/user', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send('You must log in first.');
+    }
+
+    db.query('SELECT username FROM users WHERE id = ?', [req.session.userId], (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(500).send('Error fetching user information.');
+        }
+        res.json({ username: results[0].username });
     });
 });
 
