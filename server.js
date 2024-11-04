@@ -20,6 +20,7 @@ app.use(session({
     secret: 'secret-key',
     resave: false,
     saveUninitialized: true,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 1 day
 }));
 app.use(express.static(path.join(__dirname)));
 
@@ -190,9 +191,11 @@ app.post('/api/user/update', (req, res) => {
 app.post('/auth/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            return res.status(500).send('Error logging out.');
+            console.error('Error logging out:', err); // Log the error for debugging
+            return res.status(500).send('Failed to log out. Please try again.');
         }
-        res.redirect('/login.html');
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.redirect('/'); // Redirect to homepage or login page
     });
 });
 

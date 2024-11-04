@@ -19,7 +19,12 @@
     </div>
 
     <button id="edit-profile-button">Edit Profile</button>
-    <button onclick="logout()">Logout</button>
+
+    <footer>
+        <form action="/auth/logout" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </footer>
 
     <div id="edit-profile" style="display: none;">
         <h2>Edit Profile</h2>
@@ -103,21 +108,6 @@
                 alert(error.message);
             });
         };
-
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(response => {
-                    if (response.ok) {
-                        window.location.href = 'login.html'; // Redirect to login page or homepage
-                    } else {
-                        throw new Error('Logout failed');
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert('Error logging out.');
-                });
-        }
     </script>
 </body>
 </html>
