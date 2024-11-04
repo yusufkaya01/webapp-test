@@ -77,6 +77,14 @@ app.get('/additional-info.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'additional-info.html'));
 });
 
+// Serve the explore page
+app.get('/explore.html', (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).send('You must log in first.');
+    }
+    res.sendFile(path.join(__dirname, 'explore.html'));
+});
+
 // Registration route
 app.post('/auth/register', (req, res) => {
     const { username, email, password, name, surname, birthdate, gender } = req.body;
@@ -175,6 +183,41 @@ app.post('/api/user/update', (req, res) => {
             }
             res.send('Profile updated successfully!');
         });
+});
+
+// Explore users based on filters
+app.get('/api/users', (req, res) => {
+    const { minAge, maxAge, gender } = req.query;
+    let query = 'SELECT * FROM users';
+    const params = [];
+
+    const today = new Date();
+    const ageCutOff = (age) => {
+        const birthDate = new Date();
+        birthDate.setFullYear(today.getFullYear() - age);
+        return birthDate.toISOString().split('T')[0];
+    };
+
+    if (minAge) {
+        query += ' WHERE birthdate <= ?';
+        params.push(ageCutOff(minAge));
+    }
+    if (maxAge) {
+        query += (params.length > 0 ? ' AND' : ' WHERE') + ' birthdate >= ?';
+        params.push(ageCutOff(maxAge));
+    }
+    if (gender) {
+        query += (params.length > 0 ? ' AND' : ' WHERE') + ' gender = ?';
+        params.push(gender);
+    }
+
+    db.query(query, params, (error, results) => {
+        if (error) {
+            console.error('Error fetching users:', error);
+            return res.status(500).send('Server error');
+        }
+        res.json(results);
+    });
 });
 
 // Logout route
