@@ -4,11 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore Users</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #filterSection {
+            margin-bottom: 20px;
+        }
+
+        #profileButton {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Explore Other Users</h1>
     
-    <div>
+    <div id="filterSection">
         <h2>Filter Users</h2>
         <label for="minAge">Min Age:</label>
         <input type="number" id="minAge" name="minAge" min="0" max="100">
@@ -28,6 +44,9 @@
     </div>
 
     <div id="userList"></div>
+
+    <button id="profileButton" onclick="goToProfile()">Go to My Profile</button>
+    <button onclick="logout()">Logout</button>
 
     <script>
         async function fetchUsers() {
@@ -63,6 +82,25 @@
                 userDiv.innerText = `Username: ${user.username}, Name: ${user.name} ${user.surname}, Gender: ${user.gender}`;
                 userList.appendChild(userDiv);
             });
+        }
+
+        function logout() {
+            fetch('/auth/logout', { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = 'login.html'; // Redirect to login page or homepage
+                    } else {
+                        throw new Error('Logout failed');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Error logging out.');
+                });
+        }
+
+        function goToProfile() {
+            window.location.href = 'profile.html'; // Redirect to the user's profile page
         }
     </script>
 </body>
